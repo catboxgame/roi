@@ -50,6 +50,11 @@
             <strong>อัตราแลกเปลี่ยน USD/THB :</strong>
             <span id="usd-thb-rate"></span>
         </div>
+        <br>
+        <div style="text-align: right;">
+            <a id="last-update" style="padding: 8px 20px; background-color: #e0e0e0; color: rgb(0, 0, 0); text-decoration: none; border-radius: 5px; display: inline-block; font-size: 12px;">
+            </a>
+        </div>
     </div>
 
     <form id="income-form">
@@ -72,126 +77,124 @@
     </div>
 
     <script>
-        
+        let catboxPriceUSD, toncoinPriceUSD, usdToThbRate;
+    
         async function fetchCatboxPrice() {
             const response = await fetch("https://api.dexscreener.com/latest/dex/pairs/ton/EQDq1cQKb6vQItJgBhwn7bS2FpJNnDLOKDUIBF8hHJgQwqlD");        
             const data = await response.json();
             return data.pair.priceUsd;
         }
-
+    
         async function fetchToncoinPrice() {
             const response = await fetch("https://tonapi.io/v2/rates?tokens=ton&currencies=usd");
             const data = await response.json();
             return data.rates.TON.prices.USD;
         }
-
+    
         async function fetchExchangeRate() {
-    try {
-
-        const response = await fetch("https://api.wise.com/v1/rates?source=USD&target=THB", {
-            headers: {
-                "Authorization": "Basic OGNhN2FlMjUtOTNjNS00MmFlLThhYjQtMzlkZTFlOTQzZDEwOjliN2UzNmZkLWRjYjgtNDEwZS1hYzc3LTQ5NGRmYmEyZGJjZA=="
+            try {
+                const response = await fetch("https://api.wise.com/v1/rates?source=USD&target=THB", {
+                    headers: {
+                        "Authorization": "Basic OGNhN2FlMjUtOTNjNS00MmFlLThhYjQtMzlkZTFlOTQzZDEwOjliN2UzNmZkLWRjYjgtNDEwZS1hYzc3LTQ5NGRmYmEyZGJjZA=="
+                    }
+                });
+                if (!response.ok) throw new Error("Too many requests or another error from Wise API.");
+                const data = await response.json();
+                return { rate: data[0].rate, source: "Wise" };
+            } catch (error) {
+                try {
+                    const fallbackResponse = await fetch("https://api.coingecko.com/api/v3/simple/price?ids=tether&vs_currencies=thb");
+                    const fallbackData = await fallbackResponse.json();
+                    if (!fallbackData || !fallbackData.tether || !fallbackData.tether.thb) throw new Error("CoinGecko API response error.");
+                    return { rate: fallbackData.tether.thb, source: "CoinGecko" };
+                } catch (fallbackError) {
+                    console.error("Both APIs failed:", fallbackError);
+                    return null;
+                }
             }
+        }
+    
+        function updateLastFetchedTime() {
+        const now = new Date();
+        const dateTimeString = now.toLocaleString('th-TH', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit'
         });
+        document.getElementById("last-update").textContent = `Update Price - ${dateTimeString}`;
+    }
 
-        if (!response.ok) {
-            throw new Error("Too many requests or another error from Wise API.");
-        }
+        async function updatePrices() {
+            try {
+                catboxPriceUSD = parseFloat(await fetchCatboxPrice());
+                toncoinPriceUSD = parseFloat(await fetchToncoinPrice());
+                const exchangeRateData = await fetchExchangeRate();
+                usdToThbRate = parseFloat(exchangeRateData?.rate || 0);
+                const source = exchangeRateData?.source || "ไม่สามารถดึงข้อมูลได้ รอสักครู่และรีเฟรชใหม่";
+    
+                const catboxPriceTHB = catboxPriceUSD * usdToThbRate;
+                const toncoinPriceTHB = toncoinPriceUSD * usdToThbRate;
+    
+                const catboxPerToncoin = toncoinPriceUSD / catboxPriceUSD;
+                const toncoinPerCatbox = catboxPriceUSD / toncoinPriceUSD;
+    
+                document.getElementById("catbox-price").textContent = `${catboxPriceUSD.toFixed(4)} USD / ${catboxPriceTHB.toFixed(2)} THB`;
+                document.getElementById("toncoin-price").textContent = `${toncoinPriceUSD.toFixed(4)} USD / ${toncoinPriceTHB.toFixed(2)} THB`;
+                document.getElementById("exchange-ratio").textContent = `1 Ton = ${catboxPerToncoin.toFixed(4)} Catbox / 1 Catbox = ${toncoinPerCatbox.toFixed(4)} Ton`;
+                document.getElementById("usd-thb-rate").textContent = `1 USD = ${usdToThbRate.toFixed(2)} THB (${source})`;
 
-        const data = await response.json();
-        return { rate: data[0].rate, source: "Wise" };
-    } catch (error) {
+                updateLastFetchedTime();
 
-        try {
-            const fallbackResponse = await fetch("https://api.coingecko.com/api/v3/simple/price?ids=tether&vs_currencies=thb");
-            const fallbackData = await fallbackResponse.json();
-
-            if (!fallbackData || !fallbackData.tether || !fallbackData.tether.thb) {
-                throw new Error("CoinGecko API response error.");
+            } catch (error) {
+                console.error("Error fetching data:", error);
+                document.getElementById("catbox-price").textContent = "ดึงข้อมูลไม่ได้ รอสักครู่แล้วลองใหม่";
+                document.getElementById("toncoin-price").textContent = "ดึงข้อมูลไม่ได้ รอสักครู่แล้วลองใหม่";
+                document.getElementById("exchange-ratio").textContent = "ดึงข้อมูลไม่ได้ รอสักครู่แล้วลองใหม่";
+                document.getElementById("usd-thb-rate").textContent = "ดึงข้อมูลไม่ได้ รอสักครู่แล้วลองใหม่";
             }
-
-            return { rate: fallbackData.tether.thb, source: "CoinGecko" };
-        } catch (fallbackError) {
-            console.error("Both APIs failed:", fallbackError);
-            return null;
         }
-    }
-}
-
-async function updatePrices() {
-    try {
-        const catboxPriceUSD = await fetchCatboxPrice();
-        const toncoinPriceUSD = await fetchToncoinPrice();
-        const exchangeRateData = await fetchExchangeRate();
-
-        const usdToThbRate = exchangeRateData?.rate || 0;
-        const source = exchangeRateData?.source || "ไม่สามารถดึงข้อมูลได้ รอสักครู่และรีเฟรชใหม่";
-
-        const catboxPriceUSDValid = parseFloat(catboxPriceUSD);
-        const toncoinPriceUSDValid = parseFloat(toncoinPriceUSD);
-        const usdToThbRateValid = parseFloat(usdToThbRate);
-
-        const catboxPriceTHB = catboxPriceUSDValid * usdToThbRateValid;
-        const toncoinPriceTHB = toncoinPriceUSDValid * usdToThbRateValid;
-
-        const catboxPerToncoin = toncoinPriceUSDValid / catboxPriceUSDValid;
-        const toncoinPerCatbox = catboxPriceUSDValid / toncoinPriceUSDValid;
-
-        document.getElementById("catbox-price").textContent = `${catboxPriceUSDValid.toFixed(4)} USD / ${catboxPriceTHB.toFixed(2)} THB`;
-        document.getElementById("toncoin-price").textContent = `${toncoinPriceUSDValid.toFixed(4)} USD / ${toncoinPriceTHB.toFixed(2)} THB`;
-        document.getElementById("exchange-ratio").textContent = `1 Ton = ${catboxPerToncoin.toFixed(4)} Catbox / 1 Catbox = ${toncoinPerCatbox.toFixed(4)} Ton`;
-        document.getElementById("usd-thb-rate").textContent = `1 USD = ${usdToThbRateValid.toFixed(2)} THB (${source})`;
-
-        return { catboxPriceUSD: catboxPriceUSDValid, toncoinPriceUSD: toncoinPriceUSDValid, usdToThbRate: usdToThbRateValid };
-    } catch (error) {
-        console.error("Error fetching data:", error);
-        
-        document.getElementById("catbox-price").textContent = "ดึงข้อมูลไม่ได้ รอสักครู่แล้วลองใหม่";
-        document.getElementById("toncoin-price").textContent = "ดึงข้อมูลไม่ได้ รอสักครู่แล้วลองใหม่";
-        document.getElementById("exchange-ratio").textContent = "ดึงข้อมูลไม่ได้ รอสักครู่แล้วลองใหม่";
-        document.getElementById("usd-thb-rate").textContent = "ดึงข้อมูลไม่ได้ รอสักครู่แล้วลองใหม่";
-    }
-}
-
-document.getElementById("income-form").addEventListener("submit", async function(event) {
-    event.preventDefault();
-
-    const catboxPerDay = parseFloat(document.getElementById("catbox_per_day").value);
-    const { catboxPriceUSD, toncoinPriceUSD, usdToThbRate } = await updatePrices();
-    const dailyIncomeUSD = catboxPerDay * catboxPriceUSD;
-    const incomeTable = document.getElementById("income-table");
-
-    incomeTable.innerHTML = `
-        <tr>
-            <th>วันที่</th>
-            <th>เหรียญ CatBox</th>
-            <th>เหรียญ Toncoin</th>
-            <th>รายได้ (USD)</th>
-            <th>รายได้ (THB)</th>
-        </tr>
-    `;
-
-    for (let day = 1; day <= 60; day++) {
-        const incomeUSD = dailyIncomeUSD * day;
-        const incomeTHB = incomeUSD * usdToThbRate;
-        const coinsEarnedCatbox = catboxPerDay * day;
-        const coinsEarnedToncoin = (dailyIncomeUSD / toncoinPriceUSD) * day;
-
-        incomeTable.innerHTML += `
-            <tr>
-                <td>${day}</td>
-                <td>${coinsEarnedCatbox.toFixed(4)}</td>
-                <td>${coinsEarnedToncoin.toFixed(4)}</td>
-                <td>${incomeUSD.toFixed(2)} USD</td>
-                <td>${incomeTHB.toFixed(2)} THB</td>
-            </tr>
-        `;
-    }
-
-    document.getElementById("income-results").style.display = "block";
-});
-
-updatePrices();
+    
+        document.getElementById("income-form").addEventListener("submit", function(event) {
+            event.preventDefault();
+    
+            const catboxPerDay = parseFloat(document.getElementById("catbox_per_day").value);
+            const dailyIncomeUSD = catboxPerDay * catboxPriceUSD;
+            const incomeTable = document.getElementById("income-table");
+    
+            incomeTable.innerHTML = `
+                <tr>
+                    <th>วันที่</th>
+                    <th>เหรียญ CatBox</th>
+                    <th>เหรียญ Toncoin</th>
+                    <th>รายได้ (USD)</th>
+                    <th>รายได้ (THB)</th>
+                </tr>
+            `;
+    
+            for (let day = 1; day <= 60; day++) {
+                const incomeUSD = dailyIncomeUSD * day;
+                const incomeTHB = incomeUSD * usdToThbRate;
+                const coinsEarnedCatbox = catboxPerDay * day;
+                const coinsEarnedToncoin = (dailyIncomeUSD / toncoinPriceUSD) * day;
+    
+                incomeTable.innerHTML += `
+                    <tr>
+                        <td>${day}</td>
+                        <td>${coinsEarnedCatbox.toFixed(4)}</td>
+                        <td>${coinsEarnedToncoin.toFixed(4)}</td>
+                        <td>${incomeUSD.toFixed(2)} USD</td>
+                        <td>${incomeTHB.toFixed(2)} THB</td>
+                    </tr>
+                `;
+            }
+    
+            document.getElementById("income-results").style.display = "block";
+        });
+    
+        updatePrices();
     </script>
 </body>
 </html>
