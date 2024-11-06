@@ -82,3 +82,17 @@
             color: #333;
             font-weight: bold;
         }
+@media (max-width: 600px) {
+    body {
+        font-size: 14px; 
+    }
+    h1 {
+        font-size: 20px; 
+    }
+    label, input[type="number"], input[type="submit"], td, th {
+        font-size: 12px;
+    }
+    .info-box {
+        font-size: 13px;
+    }
+}
