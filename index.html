@@ -11,12 +11,9 @@
 
     <script>
         async function getCatboxPrice() {
-            const url = "https://api.dexscreener.com/latest/dex/pairs/ton/EQDq1cQKb6vQItJgBhwn7bS2FpJNnDLOKDUIBF8hHJgQwqlD";
-            
-            try {
-                const response = await fetch(url);
-                const data = await response.json();
-                const priceUsd = data.pair?.priceUsd;
+            const response = await fetch("https://api.dexscreener.com/latest/dex/pairs/ton/EQDq1cQKb6vQItJgBhwn7bS2FpJNnDLOKDUIBF8hHJgQwqlD");        
+            const data = await response.json();
+            const priceUsd = data.pair?.priceUsd;
 
                 document.getElementById('price').textContent = priceUsd ? `$${priceUsd}` : 'Price not available';
             } catch (error) {
