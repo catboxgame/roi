@@ -1,37 +1,159 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="th">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Catbox Price</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>รายได้จาก Catbox</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <h1>Catbox Price in UภภSD</h1>
-    <div id="price">Loading...</div>
+    <h1>คำนวณรายได้จาก Catbox</h1>
+
+    <div class="result">
+        <div class="info-box">
+            <strong>ราคา 1 Catbox :</strong>
+            <span id="catbox-price"></span>
+        </div>
+        <br>
+        <div class="info-box">
+            <strong>ราคา 1 Toncoin :</strong>
+            <span id="toncoin-price"></span>
+        </div>
+        <br>
+        <div class="info-box">
+            <strong>อัตราส่วน :</strong>
+            <span id="exchange-ratio"></span>
+        </div>
+        <br>
+        <div class="info-box">
+            <strong>อัตราแลกเปลี่ยน USD/THB :</strong>
+            <span id="usd-thb-rate"></span>
+        </div>
+    </div>
+
+    <form id="income-form">
+        <label for="catbox_per_day">แรงขุด Catbox ต่อวัน:</label>
+        <input type="number" id="catbox_per_day" name="catbox_per_day" required min="0" step="0.000000001">
+        <input type="submit" value="คำนวณ">
+    </form>
+
+    <div class="result" id="income-results" style="display: none;">
+        <h2>ผลลัพธ์รายได้รายวัน</h2>
+        <table id="income-table">
+            <tr>
+                <th>วันที่</th>
+                <th>เหรียญ CatBox</th>
+                <th>เหรียญ Toncoin</th>
+                <th>รายได้ (USD)</th>
+                <th>รายได้ (THB)</th>
+            </tr>
+        </table>
+    </div>
 
     <script>
-async function fetchCatboxPrice() {
-    const response = await fetch("https://api.dexscreener.com/latest/dex/pairs/ton/EQDq1cQKb6vQItJgBhwn7bS2FpJNnDLOKDUIBF8hHJgQwqlD");
-    const data = await response.json();
-    
-    // ตรวจสอบว่าข้อมูลที่ได้มีค่า priceUsd
-    if (data.pairs && data.pairs.length > 0) {
-        const catboxPriceUsd = data.pairs[0].priceUsd; // เข้าถึง priceUsd
-        return catboxPriceUsd;
-    } else {
-        console.error("ไม่พบข้อมูลราคา Catbox");
-        return null; // หรือ 0 ถ้าต้องการค่าดีฟอลต์
-    }
+        
+        async function fetchCatboxPrice() {
+            const response = await fetch("https://api.dexscreener.com/latest/dex/pairs/ton/EQDq1cQKb6vQItJgBhwn7bS2FpJNnDLOKDUIBF8hHJgQwqlD");        
+            const data = await response.json();
+            return data.pair.priceUsd;
+        }
+
+        async function fetchToncoinPrice() {
+            const response = await fetch("https://tonapi.io/v2/rates?tokens=ton&currencies=usd");
+            const data = await response.json();
+            return data.rates.TON.prices.USD;
+        }
+
+        async function fetchExchangeRate() {
+            const response = await fetch("https://api.wise.com/v1/rates?source=USD&target=THB", {
+                headers: {
+                    "Authorization": "Basic OGNhN2FlMjUtOTNjNS00MmFlLThhYjQtMzlkZTFlOTQzZDEwOjliN2UzNmZkLWRjYjgtNDEwZS1hYzc3LTQ5NGRmYmEyZGJjZA=="
+                }
+            });
+            const data = await response.json();
+            return data[0].rate;
+        }
+
+  async function updatePrices() {
+            const [catboxPriceUSD, toncoinPriceUSD, usdToThbRate] = await Promise.all([
+        fetchCatboxPrice(),
+        fetchToncoinPrice(),
+        fetchExchangeRate()
+
+    ]);
+
+    // ตรวจสอบค่าที่ได้รับจาก API
+    console.log("Catbox price USD:", catboxPriceUSD); // ตรวจสอบค่าที่ได้จาก API
+    console.log("Toncoin price USD:", toncoinPriceUSD); // ตรวจสอบค่าที่ได้จาก API
+    console.log("Exchange rate USD/THB:", usdToThbRate); // ตรวจสอบอัตราแลกเปลี่ยน
+
+    // แปลงค่าจาก string เป็น number ก่อนคำนวณ
+    const catboxPriceUSDValid = parseFloat(catboxPriceUSD);
+    const toncoinPriceUSDValid = parseFloat(toncoinPriceUSD);
+    const usdToThbRateValid = parseFloat(usdToThbRate);
+
+    // ตรวจสอบค่าหลังจากแปลงเป็นตัวเลข
+    console.log("Validated Catbox price USD:", catboxPriceUSDValid);
+    console.log("Validated Toncoin price USD:", toncoinPriceUSDValid);
+    console.log("Validated Exchange rate USD/THB:", usdToThbRateValid);
+
+    // คำนวณราคาใน THB
+    const catboxPriceTHB = catboxPriceUSDValid * usdToThbRateValid;
+    const toncoinPriceTHB = toncoinPriceUSDValid * usdToThbRateValid;
+
+    // คำนวณอัตราการแลกเปลี่ยน
+    const catboxPerToncoin = (toncoinPriceUSDValid && catboxPriceUSDValid) ? toncoinPriceUSDValid / catboxPriceUSDValid : 0;
+    const toncoinPerCatbox = (catboxPriceUSDValid && toncoinPriceUSDValid) ? catboxPriceUSDValid / toncoinPriceUSDValid : 0;
+
+    // แสดงผลข้อมูลในหน้าเว็บ
+    document.getElementById("catbox-price").textContent = `${catboxPriceUSDValid.toFixed(4)} USD / ${catboxPriceTHB.toFixed(2)} THB`;
+    document.getElementById("toncoin-price").textContent = `${toncoinPriceUSDValid.toFixed(4)} USD / ${toncoinPriceTHB.toFixed(2)} THB`;
+    document.getElementById("exchange-ratio").textContent = `1 Ton = ${catboxPerToncoin.toFixed(4)} Catbox / 1 Catbox = ${toncoinPerCatbox.toFixed(4)} Ton`;
+    document.getElementById("usd-thb-rate").textContent = `1 USD = ${usdToThbRateValid.toFixed(2)} THB`;
+
+    return { catboxPriceUSD: catboxPriceUSDValid, toncoinPriceUSD: toncoinPriceUSDValid, usdToThbRate: usdToThbRateValid };
 }
 
-fetchCatboxPrice().then(price => {
-    if (price) {
-        console.log(`ราคา 1 Catbox: $${price}`);
-    }
-});
 
+        document.getElementById("income-form").addEventListener("submit", async function(event) {
+            event.preventDefault();
 
-        getCatboxPrice();
+            const catboxPerDay = parseFloat(document.getElementById("catbox_per_day").value);
+            const { catboxPriceUSD, toncoinPriceUSD, usdToThbRate } = await updatePrices();
+            const dailyIncomeUSD = catboxPerDay * catboxPriceUSD;
+            const incomeTable = document.getElementById("income-table");
+
+            incomeTable.innerHTML = `
+                <tr>
+                    <th>วันที่</th>
+                    <th>เหรียญ CatBox</th>
+                    <th>เหรียญ Toncoin</th>
+                    <th>รายได้ (USD)</th>
+                    <th>รายได้ (THB)</th>
+                </tr>
+            `;
+
+            for (let day = 1; day <= 60; day++) {
+                const incomeUSD = dailyIncomeUSD * day;
+                const incomeTHB = incomeUSD * usdToThbRate;
+                const coinsEarnedCatbox = catboxPerDay * day;
+                const coinsEarnedToncoin = (dailyIncomeUSD / toncoinPriceUSD) * day;
+
+                incomeTable.innerHTML += `
+                    <tr>
+                        <td>${day}</td>
+                        <td>${coinsEarnedCatbox.toFixed(4)}</td>
+                        <td>${coinsEarnedToncoin.toFixed(4)}</td>
+                        <td>${incomeUSD.toFixed(2)} USD</td>
+                        <td>${incomeTHB.toFixed(2)} THB</td>
+                    </tr>
+                `;
+            }
+
+            document.getElementById("income-results").style.display = "block";
+        });
+
+        updatePrices();
     </script>
 </body>
 </html>
