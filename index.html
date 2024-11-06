@@ -94,40 +94,40 @@
             return data[0].rate;
         }
 
-  async function updatePrices() {
-            const [catboxPriceUSD, toncoinPriceUSD, usdToThbRate] = await Promise.all([
-        fetchCatboxPrice(),
-        fetchToncoinPrice(),
-        fetchExchangeRate()
+        async function updatePrices() {
+    try {
+        const [catboxPriceUSD, toncoinPriceUSD, usdToThbRate] = await Promise.all([
+            fetchCatboxPrice(),
+            fetchToncoinPrice(),
+            fetchExchangeRate()
+        ]);
 
-    ]);
+        const catboxPriceUSDValid = parseFloat(catboxPriceUSD);
+        const toncoinPriceUSDValid = parseFloat(toncoinPriceUSD);
+        const usdToThbRateValid = parseFloat(usdToThbRate);
 
-    console.log("Catbox price USD:", catboxPriceUSD);
-    console.log("Toncoin price USD:", toncoinPriceUSD); 
-    console.log("Exchange rate USD/THB:", usdToThbRate); 
+        const catboxPriceTHB = catboxPriceUSDValid * usdToThbRateValid;
+        const toncoinPriceTHB = toncoinPriceUSDValid * usdToThbRateValid;
 
-    const catboxPriceUSDValid = parseFloat(catboxPriceUSD);
-    const toncoinPriceUSDValid = parseFloat(toncoinPriceUSD);
-    const usdToThbRateValid = parseFloat(usdToThbRate);
+        const catboxPerToncoin = (toncoinPriceUSDValid && catboxPriceUSDValid) ? toncoinPriceUSDValid / catboxPriceUSDValid : 0;
+        const toncoinPerCatbox = (catboxPriceUSDValid && toncoinPriceUSDValid) ? catboxPriceUSDValid / toncoinPriceUSDValid : 0;
 
-    console.log("Validated Catbox price USD:", catboxPriceUSDValid);
-    console.log("Validated Toncoin price USD:", toncoinPriceUSDValid);
-    console.log("Validated Exchange rate USD/THB:", usdToThbRateValid);
+        document.getElementById("catbox-price").textContent = `${catboxPriceUSDValid.toFixed(4)} USD / ${catboxPriceTHB.toFixed(2)} THB`;
+        document.getElementById("toncoin-price").textContent = `${toncoinPriceUSDValid.toFixed(4)} USD / ${toncoinPriceTHB.toFixed(2)} THB`;
+        document.getElementById("exchange-ratio").textContent = `1 Ton = ${catboxPerToncoin.toFixed(4)} Catbox / 1 Catbox = ${toncoinPerCatbox.toFixed(4)} Ton`;
+        document.getElementById("usd-thb-rate").textContent = `1 USD = ${usdToThbRateValid.toFixed(2)} THB`;
 
-    const catboxPriceTHB = catboxPriceUSDValid * usdToThbRateValid;
-    const toncoinPriceTHB = toncoinPriceUSDValid * usdToThbRateValid;
-
-
-    const catboxPerToncoin = (toncoinPriceUSDValid && catboxPriceUSDValid) ? toncoinPriceUSDValid / catboxPriceUSDValid : 0;
-    const toncoinPerCatbox = (catboxPriceUSDValid && toncoinPriceUSDValid) ? catboxPriceUSDValid / toncoinPriceUSDValid : 0;
-
-    document.getElementById("catbox-price").textContent = `${catboxPriceUSDValid.toFixed(4)} USD / ${catboxPriceTHB.toFixed(2)} THB`;
-    document.getElementById("toncoin-price").textContent = `${toncoinPriceUSDValid.toFixed(4)} USD / ${toncoinPriceTHB.toFixed(2)} THB`;
-    document.getElementById("exchange-ratio").textContent = `1 Ton = ${catboxPerToncoin.toFixed(4)} Catbox / 1 Catbox = ${toncoinPerCatbox.toFixed(4)} Ton`;
-    document.getElementById("usd-thb-rate").textContent = `1 USD = ${usdToThbRateValid.toFixed(2)} THB`;
-
-    return { catboxPriceUSD: catboxPriceUSDValid, toncoinPriceUSD: toncoinPriceUSDValid, usdToThbRate: usdToThbRateValid };
+        return { catboxPriceUSD: catboxPriceUSDValid, toncoinPriceUSD: toncoinPriceUSDValid, usdToThbRate: usdToThbRateValid };
+    } catch (error) {
+        console.error("Error fetching data:", error);
+        
+        document.getElementById("catbox-price").textContent = "ไม่สามารถดึงข้อมูลเหรียญได้ รอสักครู่และรีเฟรชหน้าเว็บ";
+        document.getElementById("toncoin-price").textContent = "ไม่สามารถดึงข้อมูลเหรียญได้ รอสักครู่และรีเฟรชหน้าเว็บ";
+        document.getElementById("exchange-ratio").textContent = "ไม่สามารถดึงข้อมูลเหรียญได้ รอสักครู่และรีเฟรชหน้าเว็บ";
+        document.getElementById("usd-thb-rate").textContent = "ไม่สามารถดึงข้อมูลเหรียญได้ รอสักครู่และรีเฟรชหน้าเว็บ";
+    }
 }
+
 
 
         document.getElementById("income-form").addEventListener("submit", async function(event) {
