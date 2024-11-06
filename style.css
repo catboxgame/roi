@@ -1,3 +1,4 @@
+   /* General body styling */
         body { 
             font-family: Arial, sans-serif; 
             background-color: #e9ecef;
@@ -13,6 +14,8 @@
             color: #2c3e50;
             margin-bottom: 20px;
         }
+
+        /* Form and result container styling */
         form, .result {
             max-width: 600px;
             margin: 20px auto;
@@ -22,6 +25,8 @@
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
             border: 1px solid #d1d1d1;       
         }
+
+        /* Consistent spacing in result container */
         .result {
             margin-top: 0;
             padding-top: 20px;
@@ -35,11 +40,13 @@
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
             font-size: 14px; /* ปรับขนาดฟอนต์ที่นี่ */
         }
+        /* Form inputs styling */
         label { 
             display: block; 
             margin-bottom: 5px; 
             color: #34495e;
         }
+        input[type="number"], input[type="submit"] { 
             width: 100%;
             padding: 10px;
             margin: 10px 0;
@@ -61,6 +68,8 @@
         input[type="submit"]:hover { 
             background-color: #2980b9;
         }
+
+        /* Table styling */
         table {
             width: 100%;
             margin-top: 10px;
