@@ -27,4 +27,3 @@
         getCatboxPrice();
     </script>
 </body>
-</html>
