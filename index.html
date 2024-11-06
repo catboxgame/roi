@@ -7,7 +7,21 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+
     <h1>คำนวณรายได้จาก Catbox</h1>
+
+    <div style="text-align: center;">
+        <a href="https://t.me/CatBoxGame_bot/app?startapp=WAFPC" style="display: inline-block; padding: 10px 20px; background-color: #007bff; color: white; text-decoration: none; border-radius: 5px; margin-bottom: 20px;">
+            Start Catbox (ref)
+        </a>
+    </div>
+
+    <div style="text-align: center;">
+        <span style="display: inline-block; padding: 10px 20px; color: black; text-decoration: none; border-radius: 5px; margin-bottom: 20px;">
+            <img src="ton-icon.svg" alt="Ton Icon" style="vertical-align: middle; width: 20px; height: 20px; margin-right: 10px;">
+         Donate : UQAvQ6XYxxgcD2J1jcIR5znk9Nl9m83xG4lBqrY8PTHlOmYr
+        </span>
+    </div>
 
     <div class="result">
         <div class="info-box">
@@ -82,30 +96,25 @@
 
     ]);
 
-    // ตรวจสอบค่าที่ได้รับจาก API
-    console.log("Catbox price USD:", catboxPriceUSD); // ตรวจสอบค่าที่ได้จาก API
-    console.log("Toncoin price USD:", toncoinPriceUSD); // ตรวจสอบค่าที่ได้จาก API
-    console.log("Exchange rate USD/THB:", usdToThbRate); // ตรวจสอบอัตราแลกเปลี่ยน
+    console.log("Catbox price USD:", catboxPriceUSD);
+    console.log("Toncoin price USD:", toncoinPriceUSD); 
+    console.log("Exchange rate USD/THB:", usdToThbRate); 
 
-    // แปลงค่าจาก string เป็น number ก่อนคำนวณ
     const catboxPriceUSDValid = parseFloat(catboxPriceUSD);
     const toncoinPriceUSDValid = parseFloat(toncoinPriceUSD);
     const usdToThbRateValid = parseFloat(usdToThbRate);
 
-    // ตรวจสอบค่าหลังจากแปลงเป็นตัวเลข
     console.log("Validated Catbox price USD:", catboxPriceUSDValid);
     console.log("Validated Toncoin price USD:", toncoinPriceUSDValid);
     console.log("Validated Exchange rate USD/THB:", usdToThbRateValid);
 
-    // คำนวณราคาใน THB
     const catboxPriceTHB = catboxPriceUSDValid * usdToThbRateValid;
     const toncoinPriceTHB = toncoinPriceUSDValid * usdToThbRateValid;
 
-    // คำนวณอัตราการแลกเปลี่ยน
+
     const catboxPerToncoin = (toncoinPriceUSDValid && catboxPriceUSDValid) ? toncoinPriceUSDValid / catboxPriceUSDValid : 0;
     const toncoinPerCatbox = (catboxPriceUSDValid && toncoinPriceUSDValid) ? catboxPriceUSDValid / toncoinPriceUSDValid : 0;
 
-    // แสดงผลข้อมูลในหน้าเว็บ
     document.getElementById("catbox-price").textContent = `${catboxPriceUSDValid.toFixed(4)} USD / ${catboxPriceTHB.toFixed(2)} THB`;
     document.getElementById("toncoin-price").textContent = `${toncoinPriceUSDValid.toFixed(4)} USD / ${toncoinPriceTHB.toFixed(2)} THB`;
     document.getElementById("exchange-ratio").textContent = `1 Ton = ${catboxPerToncoin.toFixed(4)} Catbox / 1 Catbox = ${toncoinPerCatbox.toFixed(4)} Ton`;
