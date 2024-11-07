@@ -41,6 +41,16 @@
             <span id="toncoin-price"></span>
         </div>
         <br>
+        <div class="info-box" style="display: flex; align-items: center;">
+            <strong>ราคา :</strong>
+            <div style="display: flex; align-items: center; margin-left: 10px;">
+                <button id="decrement" style="padding: 3px 8px;">-</button>
+                <input type="number" id="box-quantity" value="1" style="width: 60px; padding: 5px; text-align: center; margin: 0 10px;" min="1">
+                <button id="increment" style="padding: 3px 6px;">+</button>
+            </div>
+            <span id="calculated-price" style="margin-left: 10px;"></span>
+        </div>
+        <br>
         <div class="info-box">
             <strong>อัตราส่วน :</strong>
             <span id="exchange-ratio"></span>
@@ -51,7 +61,10 @@
             <span id="usd-thb-rate"></span>
         </div>
         <br>
-        <div style="text-align: right;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div style="text-align: left;">
+                *รีเฟรชหรือคำวนกล่องบ่อยอาจจะทำให้ดึงข้อมูลเหรียญดึงไม่ได้ ต้องรอสักครู่
+            </div>
             <a id="last-update" style="padding: 8px 20px; background-color: #e0e0e0; color: rgb(0, 0, 0); text-decoration: none; border-radius: 5px; display: inline-block; font-size: 12px;">
             </a>
         </div>
@@ -127,35 +140,92 @@
         document.getElementById("last-update").textContent = `อัพเดทราคาเมื่อ - ${dateTimeString}`;
     }
 
-        async function updatePrices() {
-            try {
-                catboxPriceUSD = parseFloat(await fetchCatboxPrice());
-                toncoinPriceUSD = parseFloat(await fetchToncoinPrice());
-                const exchangeRateData = await fetchExchangeRate();
-                usdToThbRate = parseFloat(exchangeRateData?.rate || 0);
-                const source = exchangeRateData?.source || "ไม่สามารถดึงข้อมูลได้ รอสักครู่และรีเฟรชใหม่";
-    
-                const catboxPriceTHB = catboxPriceUSD * usdToThbRate;
-                const toncoinPriceTHB = toncoinPriceUSD * usdToThbRate;
-    
-                const catboxPerToncoin = toncoinPriceUSD / catboxPriceUSD;
-                const toncoinPerCatbox = catboxPriceUSD / toncoinPriceUSD;
-    
-                document.getElementById("catbox-price").textContent = `${catboxPriceUSD.toFixed(4)} USD / ${catboxPriceTHB.toFixed(2)} THB`;
-                document.getElementById("toncoin-price").textContent = `${toncoinPriceUSD.toFixed(4)} USD / ${toncoinPriceTHB.toFixed(2)} THB`;
-                document.getElementById("exchange-ratio").textContent = `1 Ton = ${catboxPerToncoin.toFixed(4)} Catbox / 1 Catbox = ${toncoinPerCatbox.toFixed(4)} Ton`;
-                document.getElementById("usd-thb-rate").textContent = `1 USD = ${usdToThbRate.toFixed(2)} THB (${source})`;
+let currentBoxValue = 1; // ค่าเริ่มต้นที่กรอก
 
-                updateLastFetchedTime();
+// เมื่อกดปุ่ม +
+document.getElementById("increment").addEventListener("click", function() {
+    // ถ้า currentBoxValue เป็น 1, เปลี่ยนเป็น 15
+    if (currentBoxValue === 1) {
+        currentBoxValue = 15;
+    }
+    // ถ้า currentBoxValue เป็น 15, เปลี่ยนเป็น 50
+    else if (currentBoxValue === 15) {
+        currentBoxValue = 50;
+    }
+    // ถ้า currentBoxValue เป็น 50 ขึ้นไป เพิ่มทีละ 50
+    else if (currentBoxValue >= 50) {
+        currentBoxValue += 50;
+    }
 
-            } catch (error) {
-                console.error("Error fetching data:", error);
-                document.getElementById("catbox-price").textContent = "ดึงข้อมูลไม่ได้ รอสักครู่แล้วลองใหม่";
-                document.getElementById("toncoin-price").textContent = "ดึงข้อมูลไม่ได้ รอสักครู่แล้วลองใหม่";
-                document.getElementById("exchange-ratio").textContent = "ดึงข้อมูลไม่ได้ รอสักครู่แล้วลองใหม่";
-                document.getElementById("usd-thb-rate").textContent = "ดึงข้อมูลไม่ได้ รอสักครู่แล้วลองใหม่";
-            }
-        }
+    // อัพเดตค่าที่กรอกในช่อง
+    document.getElementById("box-quantity").value = currentBoxValue;
+    updatePrices(); // อัพเดตข้อมูลหลังการเปลี่ยนแปลง
+});
+
+// เมื่อกดปุ่ม -
+document.getElementById("decrement").addEventListener("click", function() {
+    // ถ้า currentBoxValue เป็น 50 ลดเป็น 15
+    if (currentBoxValue === 50) {
+        currentBoxValue = 15;
+    }
+    // ถ้า currentBoxValue เป็น 15 ลดเป็น 1
+    else if (currentBoxValue === 15) {
+        currentBoxValue = 1;
+    }
+    // ถ้า currentBoxValue มากกว่า 50 ลดทีละ 50
+    else if (currentBoxValue > 50) {
+        currentBoxValue -= 50;
+    }
+
+    // อัพเดตค่าที่กรอกในช่อง
+    document.getElementById("box-quantity").value = currentBoxValue;
+    updatePrices(); // อัพเดตข้อมูลหลังการเปลี่ยนแปลง
+});
+
+async function updatePrices() {
+    try {
+        // ดึงราคาจาก API
+        catboxPriceUSD = parseFloat(await fetchCatboxPrice());
+        toncoinPriceUSD = parseFloat(await fetchToncoinPrice());
+        const exchangeRateData = await fetchExchangeRate();
+        usdToThbRate = parseFloat(exchangeRateData?.rate || 0);
+        const source = exchangeRateData?.source || "ไม่สามารถดึงข้อมูลได้ รอสักครู่และรีเฟรชใหม่";
+
+        // คำนวณราคาที่แสดงผล
+        const catboxPriceTHB = catboxPriceUSD * usdToThbRate;
+        const toncoinPriceTHB = toncoinPriceUSD * usdToThbRate;
+
+        const catboxPerToncoin = toncoinPriceUSD / catboxPriceUSD;
+        const toncoinPerCatbox = catboxPriceUSD / toncoinPriceUSD;
+
+        const totalCatbox = 52.26 * currentBoxValue; // คำนวณจำนวน Catbox ที่ต้องการ
+
+        // คำนวณ TonPerBox และแปลงเป็น USD
+        const TonPerBox = totalCatbox * toncoinPerCatbox;  // คูณกับอัตราส่วน Toncoin ต่อ Catbox
+        const TonPerBoxInUSD = TonPerBox * toncoinPriceUSD; // แปลงเป็น USD
+
+        const calculatedPriceTHB = TonPerBoxInUSD * usdToThbRate.toFixed(2);  // คำนวณราคาจาก USD ไป THB
+
+        // แสดงข้อมูลที่คำนวณ
+        document.getElementById("catbox-price").textContent = `${catboxPriceUSD.toFixed(4)} USD / ${catboxPriceTHB.toFixed(2)} THB`;
+        document.getElementById("toncoin-price").textContent = `${toncoinPriceUSD.toFixed(4)} USD / ${toncoinPriceTHB.toFixed(2)} THB`;
+        document.getElementById("exchange-ratio").textContent = `1 Ton = ${catboxPerToncoin.toFixed(4)} Catbox / 1 Catbox = ${toncoinPerCatbox.toFixed(4)} Ton`;
+        document.getElementById("usd-thb-rate").textContent = `1 USD = ${usdToThbRate.toFixed(2)} THB (${source})`;
+
+        // แสดงผลการคำนวณ
+        document.getElementById("calculated-price").textContent = `Box = ${TonPerBox.toFixed(4)} Ton / ${TonPerBoxInUSD.toFixed(4)} USD / ${calculatedPriceTHB.toFixed(4)} THB`;
+
+        updateLastFetchedTime();
+
+    } catch (error) {
+        console.error("Error fetching data:", error);
+        document.getElementById("catbox-price").textContent = "ดึงข้อมูลไม่ได้ รอสักครู่แล้วลองใหม่";
+        document.getElementById("toncoin-price").textContent = "ดึงข้อมูลไม่ได้ รอสักครู่แล้วลองใหม่";
+        document.getElementById("exchange-ratio").textContent = "ดึงข้อมูลไม่ได้ รอสักครู่แล้วลองใหม่";
+        document.getElementById("usd-thb-rate").textContent = "ดึงข้อมูลไม่ได้ รอสักครู่แล้วลองใหม่";
+    }
+}
+
     
         document.getElementById("income-form").addEventListener("submit", function(event) {
             event.preventDefault();
